@@ -8,7 +8,7 @@
 ## 2. Backend (FastAPI)
 
 - [x] 2.1 Setup `main.py` with `/ping`
-- [ ] 2.2 Add `/chat` endpoint
+- [x] 2.2 Add `/chat` endpoint
 - [ ] 2.3 Install LangChain, Chroma, PyMuPDF (via UV)
 
 ## 3. PDF to Vector

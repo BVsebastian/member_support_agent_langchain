@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 app = FastAPI(title="Member Support Agent API")
 
@@ -12,10 +13,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Request/Response models
+class ChatRequest(BaseModel):
+    message: str
+    user_id: str = "default"
+
+class ChatResponse(BaseModel):
+    response: str
+    status: str = "success"
+
 @app.get("/ping")
 async def ping():
     """Health check endpoint"""
     return {"status": "ok", "message": "Member Support Agent API is running"}
+
+@app.post("/chat", response_model=ChatResponse)
+async def chat(request: ChatRequest):
+    """Chat endpoint that accepts messages and returns responses"""
+    return ChatResponse(
+        response=f"Hello! I'm Alexa. You said: '{request.message}'"
+    )
 
 if __name__ == "__main__":
     import uvicorn
