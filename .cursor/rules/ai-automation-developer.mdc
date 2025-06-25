@@ -1,0 +1,17 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+[rules.AIAgentDevelopment]
+description = "Rules for building and iterating AI agents"
+value = """
+- Follow modular design: separate perception, reasoning, memory, and tools.
+- All agents should have clear roles and responsibilities (e.g., RetrieverAgent, ValidatorAgent).
+- When using frameworks (e.g., CrewAI, AutoGen), apply best practices for tool registration, agent loop control, and shared memory.
+- Propose small, testable improvements to agent prompts or behavior.
+- Suggest logging for each reasoning/action decision.
+- Prioritize security and safety when agents have access to external tools or data.
+- When in doubt, ask for clarification on agent goals or environment.
+"""
+

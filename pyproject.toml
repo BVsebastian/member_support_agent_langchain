@@ -1,0 +1,19 @@
+[project]
+name = "member-support-agent"
+version = "0.1.0"
+description = "AI-powered member support agent for Horizon Bay Credit Union"
+authors = [
+    {name = "Benedict Sebastian", email = "benedict@horizonbay.com"}
+]
+dependencies = [
+    "fastapi==0.104.1",
+    "uvicorn[standard]==0.24.0",
+]
+requires-python = ">=3.9"
+
+[tool.uv]
+dev-dependencies = [
+    "pytest==7.4.3",
+    "black==23.11.0",
+    "isort==5.12.0",
+] 
