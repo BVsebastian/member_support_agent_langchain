@@ -21,40 +21,55 @@
 - [x] 3.6 Add comprehensive test suite
 - [x] 3.7 Fix dependency conflicts and environment setup
 
-## 4. LangChain Chat Flow
+## 4. Agent Identity & Prompting
 
-- [ ] 4.1 Create `chat_chain.py`
-- [ ] 4.2 Add `ConversationBufferMemory`
-- [ ] 4.3 Return answers from `/chat`
+- [x] 4.1 Define Alexa's personality and tone (professional, friendly credit union representative)
+- [x] 4.2 Create system prompt with credit union context and knowledge base references
+- [x] 4.3 Define response guidelines and escalation rules
+- [x] 4.4 Integrate knowledge base references into prompts
+- [x] 4.5 Create prompt_manager.py with Alexa's identity
 
-## 5. Tools
+### ✅ Task 4 Completed Files:
 
-- [ ] 5.1 Create `tools.py`
-- [ ] 5.2 Add `handle_tool_call()`
-- [ ] 5.3 Integrate into chain
-- [ ] 5.4 Create `pushover_alerts.py`
+- `backend/agent_identity.md` - Alexa's complete identity and guardrails
+- `backend/prompt_manager.py` - Comprehensive system prompt with tool definitions
+- `backend/response_templates.py` - Standard response templates
+- `backend/document_pipeline.py` - Added `get_retriever()` method
 
-## 6. React Frontend
+## 5. LangChain Chat Flow
 
-- [ ] 6.1 Scaffold with CRA
-- [ ] 6.2 Build `ChatWindow`
-- [ ] 6.3 Create `api/chat.js`
-- [ ] 6.4 Connect input to backend
+- [ ] 5.1 Create `chat_chain.py`
+- [ ] 5.2 Add `ConversationBufferMemory`
+- [ ] 5.3 Return answers from `/chat`
 
-## 7. Testing
+## 6. Tools
 
-- [x] 7.1 Verify PDF ingestion
-- [ ] 7.2 Verify answer flow
-- [ ] 7.3 Trigger tool logic
+- [ ] 6.1 Create `tools.py`
+- [ ] 6.2 Add `handle_tool_call()`
+- [ ] 6.3 Integrate into chain
+- [ ] 6.4 Create `pushover_alerts.py`
 
-## 8. Deployment
+## 7. React Frontend
 
-- [ ] 8.1 Vercel (frontend)
-- [ ] 8.2 Render/Railway (backend)
-- [ ] 8.3 Point React API to backend
+- [ ] 7.1 Scaffold with CRA
+- [ ] 7.2 Build `ChatWindow`
+- [ ] 7.3 Create `api/chat.js`
+- [ ] 7.4 Connect input to backend
 
-## 9. Documentation
+## 8. Testing
 
-- [ ] 9.1 Add README.md
-- [ ] 9.2 Document .env and secrets
-- [x] 9.3 Setup pyproject.toml for UV
+- [x] 8.1 Verify PDF ingestion
+- [ ] 8.2 Verify answer flow
+- [ ] 8.3 Trigger tool logic
+
+## 9. Deployment
+
+- [ ] 9.1 Vercel (frontend)
+- [ ] 9.2 Render/Railway (backend)
+- [ ] 9.3 Point React API to backend
+
+## 10. Documentation
+
+- [ ] 10.1 Add README.md
+- [ ] 10.2 Document .env and secrets
+- [x] 10.3 Setup pyproject.toml for UV

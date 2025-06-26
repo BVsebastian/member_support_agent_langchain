@@ -14,6 +14,8 @@ member_support_agent/
 │   ├── tools.py
 │   ├── pushover_alerts.py
 │   ├── prompt_manager.py
+│   ├── response_templates.py
+│   ├── agent_identity.md
 │   ├── state.py
 │   └── config/
 ├── tests/                           # Test files
@@ -38,8 +40,10 @@ member_support_agent/
 | `main.py`                         | FastAPI app with `/chat` endpoint that handles POST requests from React frontend                                                                      |
 | `chat_chain.py`                   | Builds LangChain's `ConversationalRetrievalChain` using memory + retriever                                                                            |
 | `document_pipeline.py`            | Loads all PDFs via `PyMuPDFLoader`, chunks them with `CharacterTextSplitter`, creates embeddings with `OpenAIEmbeddings`, and stores them in `Chroma` |
+| `prompt_manager.py`               | Loads system prompt from `agent_identity.md`, creates knowledge-enhanced prompts with tool definitions and escalation guidelines                      |
+| `response_templates.py`           | Provides standard response templates for welcome, escalation, and knowledge-not-found scenarios                                                       |
+| `agent_identity.md`               | Markdown file defining Alexa's personality, communication style, guardrails, and response guidelines                                                  |
 | `state.py`                        | Stores session metadata: `chat_history`, user flags, etc.                                                                                             |
-| `prompt_manager.py`               | Loads system prompt (Alexa's tone, tool usage rules)                                                                                                  |
 | `pushover_alerts.py`              | Sends alerts for unresolved or unknown queries                                                                                                        |
 | `tools.py`                        | JSON-defined tool functions + central `handle_tool_call()` dispatcher                                                                                 |
 | `config/constants.py`             | Configuration for chunk size, retriever behavior                                                                                                      |
@@ -50,20 +54,46 @@ member_support_agent/
 
 ## 📄 DocumentPipeline Methods
 
-| Method                 | Purpose                                   | Input          | Output                   |
-| ---------------------- | ----------------------------------------- | -------------- | ------------------------ |
-| `load_documents()`     | Read PDFs from knowledge base             | Directory path | List of Document objects |
-| `chunk_documents()`    | Split large documents into smaller chunks | Documents      | Smaller Document objects |
-| `create_vectorstore()` | Create and populate vector database       | Documents      | ChromaDB instance        |
-| `process_documents()`  | Complete pipeline: load → chunk → store   | Nothing        | ChromaDB instance        |
+| Method                 | Purpose                                     | Input          | Output                   |
+| ---------------------- | ------------------------------------------- | -------------- | ------------------------ |
+| `load_documents()`     | Read PDFs from knowledge base               | Directory path | List of Document objects |
+| `chunk_documents()`    | Split large documents into smaller chunks   | Documents      | Smaller Document objects |
+| `create_vectorstore()` | Create and populate vector database         | Documents      | ChromaDB instance        |
+| `get_retriever()`      | Get LangChain retriever for document search | Nothing        | LangChain Retriever      |
+| `process_documents()`  | Complete pipeline: load → chunk → store     | Nothing        | ChromaDB instance        |
 
 ### ✅ DocumentPipeline Implementation Status
 
 - **PDF Loading**: ✅ Uses `PyMuPDFLoader` to load PDFs from `data/knowledge_base/`
 - **Document Chunking**: ✅ Uses `CharacterTextSplitter` with configurable chunk size/overlap
 - **Vector Storage**: ✅ Uses `OpenAIEmbeddings` and stores in `data/vector_db/`
+- **Retrieval**: ✅ Uses `as_retriever()` method for semantic search
 - **Testing**: ✅ Complete test suite in `tests/test_document_pipeline.py`
 - **Dependencies**: ✅ All LangChain packages properly configured with compatible versions
+
+## 🤖 Agent Identity & Prompting
+
+### Alexa's Identity (agent_identity.md)
+
+- **Personality**: Professional yet approachable credit union representative
+- **Communication Style**: Friendly and professional, clear jargon-free explanations
+- **Knowledge Domains**: Account services, online banking, loans, member benefits, security
+- **Guardrails**: Knowledge base boundaries, confidentiality, financial advice limits, security protocols
+- **Response Guidelines**: Always/Never rules for professional conduct
+- **Escalation Triggers**: Account-specific issues, loan applications, fraud concerns, complaints
+
+### Prompt Management (prompt_manager.py)
+
+- **System Prompt**: Comprehensive prompt with identity, tool definitions, and escalation guidelines
+- **Knowledge Integration**: Ready for document retrieval integration in Task 5
+- **Tool Definitions**: send_notification, record_user_details, log_unknown_question
+- **Escalation Guidelines**: Step-by-step process for handling member escalations
+
+### Response Templates (response_templates.py)
+
+- **Welcome Response**: Standard introduction message
+- **Escalation Response**: Contact information request template
+- **Knowledge Not Found**: Fallback response with contact information
 
 ---
 

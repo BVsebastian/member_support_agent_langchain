@@ -91,6 +91,18 @@ class DocumentPipeline:
 
         return self.vectorstore
     
+    def get_retriever(self):
+        """Get LangChain retriever from existing vectorstore"""
+        if not self.vectorstore:
+            # Load existing vectorstore if not initialized
+            embeddings = OpenAIEmbeddings()
+            self.vectorstore = Chroma(persist_directory=self.db_name, embedding_function=embeddings)
+        
+        return self.vectorstore.as_retriever(
+            search_type="similarity",
+            search_kwargs={"k": 3}
+        )
+    
     def process_documents(self) -> Chroma:
         """Complete pipeline: load → chunk → create vectorstore """
         documents = self.load_documents()
