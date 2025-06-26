@@ -9,14 +9,17 @@
 
 - [x] 2.1 Setup `main.py` with `/ping`
 - [x] 2.2 Add `/chat` endpoint
-- [ ] 2.3 Install LangChain, Chroma, PyMuPDF (via UV)
+- [x] 2.3 Install LangChain, Chroma, PyMuPDF (via UV)
 
 ## 3. PDF to Vector
 
-- [ ] 3.1 Use `PyMuPDFLoader` to load docs
-- [ ] 3.2 Chunk with `CharacterTextSplitter`
-- [ ] 3.3 Embed with `OpenAIEmbeddings`
-- [ ] 3.4 Store in ChromaDB (`/data/vector_db/`)
+- [x] 3.1 Use `PyMuPDFLoader` to load docs
+- [x] 3.2 Chunk with `CharacterTextSplitter`
+- [x] 3.3 Embed with `OpenAIEmbeddings`
+- [x] 3.4 Store in ChromaDB (`/data/vector_db/`)
+- [x] 3.5 Create `DocumentPipeline` class with complete pipeline
+- [x] 3.6 Add comprehensive test suite
+- [x] 3.7 Fix dependency conflicts and environment setup
 
 ## 4. LangChain Chat Flow
 
@@ -40,7 +43,7 @@
 
 ## 7. Testing
 
-- [ ] 7.1 Verify PDF ingestion
+- [x] 7.1 Verify PDF ingestion
 - [ ] 7.2 Verify answer flow
 - [ ] 7.3 Trigger tool logic
 
