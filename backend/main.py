@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from chat_chain import ChatChain
 
 app = FastAPI(title="Member Support Agent API")
 
@@ -12,6 +13,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Initialize the chat chain
+chat_chain = ChatChain()
 
 # Request/Response models
 class ChatRequest(BaseModel):
@@ -30,8 +34,9 @@ async def ping():
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     """Chat endpoint that accepts messages and returns responses"""
+    response = chat_chain.get_response(request.message)
     return ChatResponse(
-        response=f"Hello! I'm Alexa. You said: '{request.message}'"
+        response=response
     )
 
 if __name__ == "__main__":
