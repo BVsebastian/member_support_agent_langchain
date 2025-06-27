@@ -1,0 +1,11 @@
+{
+  "timestamp": "2025-06-26T23:26:50.425154",
+  "original_request": "I need help with my loan application",
+  "contact_info": {
+    "name": "John Doe",
+    "email": "john@example.com",
+    "phone": "555-1234"
+  },
+  "issue_type": "loan",
+  "status": "pending"
+}
