@@ -1,31 +1,59 @@
 """
 Tools for Alexa - Member Support Agent
-Implements send_notification, record_user_details, log_unknown_question
+Implements send_notification, record_user_details, log_unknown_question, search_knowledge_base
 """
 
 import json
 import os
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
+from langchain_core.tools import tool
+from langchain.tools.retriever import create_retriever_tool
+from pushover_alerts import push
+from document_pipeline import DocumentPipeline
 
-def send_notification(params: Dict[str, Any]) -> Dict[str, Any]:
-    """Send notification about an escalation"""
+# Initialize document pipeline for retriever tool
+_document_pipeline = DocumentPipeline()
+_retriever = _document_pipeline.get_retriever()
+
+# Create retriever tool using LangChain's create_retriever_tool
+search_knowledge_base = create_retriever_tool(
+    retriever=_retriever,
+    name="search_knowledge_base",
+    description="Search the credit union knowledge base for relevant information about accounts, loans, cards, services, and policies. Use this to find answers about credit union services."
+)
+
+@tool
+def send_notification(original_request: str, issue_type: str, contact_name: str = "", contact_email: str = "", contact_phone: str = "") -> Dict[str, Any]:
+    """Send notification for escalation. Use when user needs escalation for loan, card, account, fraud, or refinance issues."""
+    print(f"DEBUG: send_notification called with issue_type='{issue_type}', contact_name='{contact_name}', contact_email='{contact_email}'")
     try:
-        original_request = params.get("original_request", "")
-        contact_info = params.get("contact_info", {})
-        issue_type = params.get("issue_type", "general")
-        
         # Validate issue_type
         valid_types = ["loan", "card", "account", "fraud", "refinance"]
         if issue_type not in valid_types:
             return {"status": "error", "message": f"Invalid issue_type. Must be one of: {valid_types}"}
         
-        # Create notification data
+        # Create contact_info dictionary from individual parameters
+        contact_info = {
+            "name": contact_name,
+            "email": contact_email,
+            "phone": contact_phone
+        }
+        
+        # Create notification message
+        message = f"ESCALATION: {issue_type.upper()}\nRequest: {original_request}\nContact: {contact_info}"
+        title = f"Member Support - {issue_type.title()} Issue"
+        
+        # Send Pushover notification
+        push_success = push(message, title)
+        
+        # Create notification data for logging
         notification = {
             "timestamp": datetime.now().isoformat(),
             "original_request": original_request,
             "contact_info": contact_info,
             "issue_type": issue_type,
+            "pushover_sent": push_success,
             "status": "pending"
         }
         
@@ -39,19 +67,34 @@ def send_notification(params: Dict[str, Any]) -> Dict[str, Any]:
         with open(filepath, 'w') as f:
             json.dump(notification, f, indent=2)
         
-        return {"status": "success", "message": f"Notification sent for {issue_type} issue"}
+        if push_success:
+            result = {"status": "success", "message": f"Notification sent for {issue_type} issue"}
+            print(f"DEBUG: send_notification success")
+            return result
+        else:
+            result = {"status": "error", "message": f"Failed to send Pushover notification for {issue_type} issue"}
+            print(f"DEBUG: send_notification failed")
+            return result
         
     except Exception as e:
-        return {"status": "error", "message": f"Failed to send notification: {str(e)}"}
+        result = {"status": "error", "message": f"Failed to send notification: {str(e)}"}
+        print(f"DEBUG: send_notification error: {str(e)}")
+        return result
 
-def record_user_details(params: Dict[str, Any]) -> Dict[str, Any]:
-    """Record user contact information for follow-up"""
+@tool
+def record_user_details(name: str = "", email: str = "", phone: str = "", notes: str = "") -> Dict[str, Any]:
+    """Record user contact information for follow-up. Use when user provides any contact information."""
+    print(f"DEBUG: record_user_details called with name='{name}', email='{email}', phone='{phone}'")
     try:
-        user_details = params.get("user_details", {})
-        
-        # Add timestamp
-        user_details["timestamp"] = datetime.now().isoformat()
-        user_details["status"] = "recorded"
+        # Create user details dictionary from individual parameters
+        user_details = {
+            "name": name,
+            "email": email,
+            "phone": phone,
+            "notes": notes,
+            "timestamp": datetime.now().isoformat(),
+            "status": "recorded"
+        }
         
         # Save to logs directory
         logs_dir = "data/logs"
@@ -63,22 +106,24 @@ def record_user_details(params: Dict[str, Any]) -> Dict[str, Any]:
         with open(filepath, 'w') as f:
             json.dump(user_details, f, indent=2)
         
-        return {"status": "success", "message": "User details recorded successfully"}
+        result = {"status": "success", "message": "User details recorded successfully"}
+        print(f"DEBUG: record_user_details success")
+        return result
         
     except Exception as e:
-        return {"status": "error", "message": f"Failed to record user details: {str(e)}"}
+        result = {"status": "error", "message": f"Failed to record user details: {str(e)}"}
+        print(f"DEBUG: record_user_details error: {str(e)}")
+        return result
 
-def log_unknown_question(params: Dict[str, Any]) -> Dict[str, Any]:
-    """Log questions that cannot be answered"""
+@tool
+def log_unknown_question(question: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Log questions that cannot be answered from knowledge base. Use when you cannot find information to answer user's question."""
     try:
-        question = params.get("question", "")
-        context = params.get("context", {})
-        
         # Create log entry
         log_entry = {
             "timestamp": datetime.now().isoformat(),
             "question": question,
-            "context": context,
+            "context": context or {},
             "status": "unanswered"
         }
         
@@ -98,17 +143,29 @@ def log_unknown_question(params: Dict[str, Any]) -> Dict[str, Any]:
         return {"status": "error", "message": f"Failed to log unknown question: {str(e)}"}
 
 def handle_tool_call(tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
-    """Central tool dispatcher"""
+    """Central tool dispatcher - handles both @tool functions and tool objects"""
     tools = {
         "send_notification": send_notification,
         "record_user_details": record_user_details,
-        "log_unknown_question": log_unknown_question
+        "log_unknown_question": log_unknown_question,
+        "search_knowledge_base": search_knowledge_base
     }
     
     if tool_name not in tools:
         return {"status": "error", "message": f"Unknown tool: {tool_name}"}
     
     try:
-        return tools[tool_name](params)
+        tool_obj = tools[tool_name]
+        
+        # Handle different tool types
+        if tool_name == "search_knowledge_base":
+            # Tool object - use .invoke() method
+            result = tool_obj.invoke(params)
+            return {"status": "success", "result": result}
+        else:
+            # @tool decorated function - call directly
+            result = tool_obj(params)
+            return result
+            
     except Exception as e:
         return {"status": "error", "message": f"Tool execution failed: {str(e)}"} 
