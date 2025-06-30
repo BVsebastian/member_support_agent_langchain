@@ -186,9 +186,14 @@ graph LR
 
 - The ChatWindow component is now complete, matches the reference UI, and is fully styled and responsive.
 
-# In the UI Architecture Reference section, add:
+# UI Architecture Reference (Updated)
 
-- ChatWindow: Complete, centered, styled per reference, with correct icons, colors, and font sizes.
+- ChatWindow now supports Markdown-formatted Alexa responses using 'marked', with type checking for safety
+- Input auto-focuses after each AI response for seamless UX
+- Real-time conversation flow, error handling, and auto-scroll are implemented
+- All frontend-backend chat integration is complete and matches reference UI
+- Only assistant messages are parsed as Markdown; user messages remain plain text
+- TypeScript interfaces were skipped as the frontend is JavaScript
 
 ```
 

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>API Test</title>
+  </head>
+  <body>
+    <h1>Testing sendMessage API</h1>
+    <button onclick="testAPI()">Test API</button>
+    <div id="result"></div>
+
+    <script type="module">
+      import { sendMessage, testSendMessage } from "./src/api/chat.js";
+
+      window.testAPI = async function () {
+        const resultDiv = document.getElementById("result");
+        resultDiv.innerHTML = "Testing...";
+
+        try {
+          console.log("🧪 Testing sendMessage function...");
+          const result = await sendMessage(
+            "Hello Alexa, what are your loan rates?"
+          );
+          console.log("✅ Test result:", result);
+
+          if (result.success) {
+            resultDiv.innerHTML = `<p style="color: green;">✅ Success! Response: ${JSON.stringify(
+              result.data,
+              null,
+              2
+            )}</p>`;
+          } else {
+            resultDiv.innerHTML = `<p style="color: red;">❌ Error: ${result.error}</p>`;
+          }
+        } catch (error) {
+          console.error("❌ Test failed:", error);
+          resultDiv.innerHTML = `<p style="color: red;">❌ Test failed: ${error.message}</p>`;
+        }
+      };
+    </script>
+  </body>
+</html>

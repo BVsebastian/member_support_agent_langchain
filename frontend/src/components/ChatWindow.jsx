@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faRobot } from "@fortawesome/free-solid-svg-icons";
 import { faUser } from "@fortawesome/free-solid-svg-icons";
 import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
+import { sendMessage } from "../api/chat.js";
+import { marked } from "marked";
 
 export default function ChatWindow() {
   const [inputValue, setInputValue] = useState("");
@@ -39,35 +41,91 @@ export default function ChatWindow() {
     },
   ]);
   const [isTyping, setIsTyping] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
 
-  // Simulate typing indicator and assistant response
-  const handleSendMessage = () => {
-    if (!inputValue.trim()) return;
+  // Auto-scroll to bottom when new messages arrive
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // Auto-focus input when processing ends
+  useEffect(() => {
+    if (!isProcessing && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isProcessing]);
+
+  // Real API call to send message with improved conversation flow
+  const handleSendMessage = async () => {
+    if (!inputValue.trim() || isProcessing) return;
+
+    const userMessage = inputValue.trim();
     const userMsg = {
       id: Date.now(),
       sender: "user",
-      text: inputValue,
+      text: userMessage,
       type: "user",
     };
+
+    // Add user message immediately
     setMessages((prev) => [...prev, userMsg]);
     setInputValue("");
     setIsTyping(true);
-    setTimeout(() => {
+    setIsProcessing(true);
+
+    try {
+      // Call our real API
+      const result = await sendMessage(userMessage);
+
+      if (result.success) {
+        // Add Alexa's response
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now() + 1,
+            sender: "assistant",
+            text: result.data.response,
+            type: "assistant",
+          },
+        ]);
+      } else {
+        // Handle API error
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now() + 1,
+            sender: "assistant",
+            text: "I'm sorry, I'm having trouble connecting right now. Please try again later.",
+            type: "error",
+          },
+        ]);
+      }
+    } catch (error) {
+      // Handle unexpected errors
+      console.error("Chat error:", error);
       setMessages((prev) => [
         ...prev,
         {
           id: Date.now() + 1,
           sender: "assistant",
-          text: "Thank you for your question! I'm here to help with any inquiries about your account, services, or general banking questions. How else can I assist you today?",
-          type: "assistant",
+          text: "I'm sorry, something went wrong. Please try again.",
+          type: "error",
         },
       ]);
+    } finally {
       setIsTyping(false);
-    }, 2000);
+      setIsProcessing(false);
+    }
   };
 
   const handleKeyPress = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey && !isProcessing) {
       e.preventDefault();
       handleSendMessage();
     }
@@ -105,8 +163,29 @@ export default function ChatWindow() {
                   className="w-5 h-5 text-gray-600"
                 />
               </div>
-              <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-md px-4 py-3 max-w-xs lg:max-w-md shadow-sm">
-                <div className="text-gray-800 text-sm">{msg.text}</div>
+              <div
+                className={`border rounded-2xl rounded-tl-md px-4 py-3 max-w-xs lg:max-w-md shadow-sm ${
+                  msg.type === "error"
+                    ? "bg-red-50 border-red-200"
+                    : "bg-white border-gray-200"
+                }`}
+              >
+                {typeof msg.text === "string" ? (
+                  <div
+                    className={`text-sm ${
+                      msg.type === "error" ? "text-red-700" : "text-gray-800"
+                    }`}
+                    dangerouslySetInnerHTML={{ __html: marked.parse(msg.text) }}
+                  />
+                ) : (
+                  <div
+                    className={`text-sm ${
+                      msg.type === "error" ? "text-red-700" : "text-gray-800"
+                    }`}
+                  >
+                    {msg.text}
+                  </div>
+                )}
               </div>
             </div>
           ) : (
@@ -149,6 +228,7 @@ export default function ChatWindow() {
             </div>
           </div>
         )}
+        <div ref={messagesEndRef} />
       </main>
 
       {/* Footer */}
@@ -156,16 +236,20 @@ export default function ChatWindow() {
         <div className="flex items-center space-x-3">
           <div className="flex-1 relative">
             <input
+              ref={inputRef}
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Ask me anything..."
-              className="w-full px-4 py-3 pr-12 bg-gray-100 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-gray-800"
+              placeholder={
+                isProcessing ? "Please wait..." : "Ask me anything..."
+              }
+              disabled={isProcessing}
+              className="w-full px-4 py-3 pr-12 bg-gray-100 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <button
               onClick={handleSendMessage}
-              disabled={!inputValue.trim()}
+              disabled={!inputValue.trim() || isProcessing}
               className="absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <FontAwesomeIcon icon={faPaperPlane} className="w-4 h-4" />
