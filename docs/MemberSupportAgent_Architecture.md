@@ -193,7 +193,9 @@ graph LR
 - Real-time conversation flow, error handling, and auto-scroll are implemented
 - All frontend-backend chat integration is complete and matches reference UI
 - Only assistant messages are parsed as Markdown; user messages remain plain text
-- TypeScript interfaces were skipped as the frontend is JavaScript
+- The frontend is implemented in JavaScript/JSX (not TypeScript)
+- File names: `App.jsx`, `ChatWindow.jsx`, `chat.js` (no .ts/.tsx files)
+- The UI is complete, styled, and responsive, focused on core functionality (no bubble animations or extra polish tasks)
 
 ```
 

@@ -91,7 +91,7 @@
 
 ## 8. React Frontend
 
-- [x] 8.1 Scaffold with CRA
+- [x] 8.1 Scaffold with Vite + React (JSX)
 - [x] 8.2 Build `ChatWindow` Component
 - [x] 8.3 Create `api/chat.js`
 - [x] 8.4 Connect input to backend
@@ -100,19 +100,18 @@
 
 ### ✅ Task 8.1 Completed Files:
 
-- `frontend/` - Complete React TypeScript application
-- `frontend/src/App.tsx` - Clean, minimal app component with Horizon Bay branding
+- `frontend/` - Complete React JavaScript (JSX) application
+- `frontend/src/App.jsx` - Clean, minimal app component with Horizon Bay branding
 - `frontend/src/App.css` - Clean styling with credit union color scheme
 - `frontend/src/components/` - Directory for chat components
 - `frontend/src/api/` - Directory for API integration
-- `frontend/src/types/` - Directory for TypeScript type definitions
 - `frontend/package.json` - Dependencies including axios for API calls
 
 ### 📋 Task 8 UI Development Plan:
 
 #### **8.2 Build ChatWindow Component**
 
-- [x] 8.2.1 Create `ChatWindow.tsx` with header (bot icon, "Alexa", "Online" status)
+- [x] 8.2.1 Create `ChatWindow.jsx` with header (bot icon, "Alexa", "Online" status)
 - [x] 8.2.2 Add chat area with welcome message and message bubbles
 - [x] 8.2.3 Implement typing indicator with animated dots
 - [x] 8.2.4 Add message input footer with send button
@@ -120,17 +119,19 @@
 
 #### **8.3 Create API Integration**
 
-- [ ] 8.3.1 Create `api/chat.ts` with axios client
-- [ ] 8.3.2 Implement POST to `/chat` endpoint
-- [ ] 8.3.3 Add error handling and loading states
-- [ ] 8.3.4 Create TypeScript interfaces for message types
+- [x] 8.3.1 Create `api/chat.js` with axios client
+- [x] 8.3.2 Implement POST to `/chat` endpoint
+- [x] 8.3.3 Add error handling and loading states
+- [x] 8.3.4 (N/A) TypeScript interfaces not used (JSX project)
 
 #### **8.4 Connect Frontend to Backend**
 
-- [ ] 8.4.1 Wire up send button to API calls
-- [ ] 8.4.2 Handle Enter key submission
-- [ ] 8.4.3 Implement real-time conversation flow
-- [ ] 8.4.4 Add auto-scroll to bottom functionality
+- [x] 8.4.1 Wire up send button to API calls
+- [x] 8.4.2 Handle Enter key submission
+- [x] 8.4.3 Implement real-time conversation flow
+- [x] 8.4.4 Add auto-scroll to bottom functionality
+
+> **Note:** All 8.3 and 8.4 subtasks are fully implemented in `frontend/src/api/chat.js` and `frontend/src/components/ChatWindow.jsx`.
 
 #### **8.5 Add Styling and Icons**
 
@@ -146,7 +147,7 @@
 - `frontend/tailwind.config.js` - **NEW**: TailwindCSS configuration with custom colors
 - `frontend/src/index.css` - **UPDATED**: Using @import "tailwindcss" (Vite plugin approach)
 - `frontend/package.json` - **UPDATED**: Dependencies including @tailwindcss/vite and axios
-- **Heroicons**: Built into TailwindCSS - no additional dependencies needed
+- **Heroicons**: Built into TailwindCSS - no additional dependencies
 - **Inter Font**: Already configured and imported
 
 #### **8.6 Polish and Animations**
@@ -184,8 +185,8 @@
 
 ### ✅ Task 8.2.1 Completed Files:
 
-- `frontend/src/components/ChatWindow.tsx` - **NEW**: Complete chat interface with header, messages, and input
-- `frontend/src/App.tsx` - **UPDATED**: Now uses ChatWindow component
+- `frontend/src/components/ChatWindow.jsx` - **NEW**: Complete chat interface with header, messages, and input
+- `frontend/src/App.jsx` - **UPDATED**: Now uses ChatWindow component
 - **Features**: Header with bot icon, online status, message bubbles, typing indicator, send button
 - **Icons**: Using Heroicons (built into TailwindCSS) - no additional dependencies
 
