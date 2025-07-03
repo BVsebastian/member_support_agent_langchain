@@ -15,30 +15,6 @@ export default function ChatWindow() {
       text: "Hello! I'm Alexa, your member assistant. I'm here to help answer questions about your account, services, and more. How can I assist you today?",
       type: "welcome",
     },
-    {
-      id: 2,
-      sender: "user",
-      text: "What are your current loan rates?",
-      type: "user",
-    },
-    {
-      id: 3,
-      sender: "assistant",
-      text: (
-        <span>
-          Our current loan rates vary by type:
-          <ul className="text-gray-800 text-sm mt-2 space-y-1">
-            <li>• Auto loans: Starting at 3.25% APR</li>
-            <li>• Personal loans: Starting at 5.99% APR</li>
-            <li>• Home loans: Starting at 4.15% APR</li>
-          </ul>
-          <span className="block mt-2">
-            Would you like more details about any specific loan type?
-          </span>
-        </span>
-      ),
-      type: "assistant",
-    },
   ]);
   const [isTyping, setIsTyping] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
