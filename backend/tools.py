@@ -166,32 +166,4 @@ def log_unknown_question(question: str, context: Optional[Dict[str, Any]] = None
         return {"status": "success", "message": "Unknown question logged successfully"}
         
     except Exception as e:
-        return {"status": "error", "message": f"Failed to log unknown question: {str(e)}"}
-
-def handle_tool_call(tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
-    """Central tool dispatcher - handles both @tool functions and tool objects"""
-    tools = {
-        "send_notification": send_notification,
-        "record_user_details": record_user_details,
-        "log_unknown_question": log_unknown_question,
-        "search_knowledge_base": search_knowledge_base
-    }
-    
-    if tool_name not in tools:
-        return {"status": "error", "message": f"Unknown tool: {tool_name}"}
-    
-    try:
-        tool_obj = tools[tool_name]
-        
-        # Handle different tool types
-        if tool_name == "search_knowledge_base":
-            # Tool object - use .invoke() method
-            result = tool_obj.invoke(params)
-            return {"status": "success", "result": result}
-        else:
-            # @tool decorated function - call directly
-            result = tool_obj(params)
-            return result
-            
-    except Exception as e:
-        return {"status": "error", "message": f"Tool execution failed: {str(e)}"} 
+        return {"status": "error", "message": f"Failed to log unknown question: {str(e)}"} 

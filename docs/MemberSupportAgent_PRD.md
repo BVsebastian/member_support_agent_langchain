@@ -94,14 +94,12 @@ sequenceDiagram
 
 ### 🌐 Frontend & Backend
 
-- Frontend:
-  - Built in React
-  - Calls FastAPI `/chat` endpoint
-  - Hosted on Vercel or Netlify
-- Backend:
-  - FastAPI server hosting LangChain logic
-  - Persistent ChromaDB directory in `/data/vector_db/`
-  - Hosted on Render, Railway, or Hugging Face Spaces (for demo)
+- **Frontend**: Successfully deployed to Vercel.
+- **Backend**: Successfully deployed to Railway.
+
+### Recent Changes
+
+- **handle_tool_call**: Moved to `test_tools.py` for testing purposes and removed from the main workflow.
 
 ### 🔐 Environment Variables
 

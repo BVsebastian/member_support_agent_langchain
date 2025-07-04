@@ -5,11 +5,12 @@ Test script for tools.py methods
 
 import sys
 from pathlib import Path
+from typing import Dict, Any
 
 # Add backend to path
 sys.path.append(str(Path(__file__).parent.parent / "backend"))
 
-from tools import send_notification, record_user_details, log_unknown_question, handle_tool_call, search_knowledge_base
+from tools import send_notification, record_user_details, log_unknown_question, search_knowledge_base
 
 def test_send_notification():
     """Test send_notification method"""
@@ -58,17 +59,34 @@ def test_log_unknown_question():
     result = log_unknown_question(params)
     print(f"✅ Result: {result}")
 
-def test_handle_tool_call():
-    """Test handle_tool_call dispatcher"""
-    print("\n🧪 Testing handle_tool_call...")
+def handle_tool_call(tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    """Central tool dispatcher - handles both @tool functions and tool objects"""
+    from tools import send_notification, record_user_details, log_unknown_question, search_knowledge_base
+    tools = {
+        "send_notification": send_notification,
+        "record_user_details": record_user_details,
+        "log_unknown_question": log_unknown_question,
+        "search_knowledge_base": search_knowledge_base
+    }
     
-    # Test valid tool
-    result = handle_tool_call("log_unknown_question", {"question": "Test question"})
-    print(f"✅ Valid tool result: {result}")
+    if tool_name not in tools:
+        return {"status": "error", "message": f"Unknown tool: {tool_name}"}
     
-    # Test invalid tool
-    result = handle_tool_call("invalid_tool", {})
-    print(f"✅ Invalid tool result: {result}")
+    try:
+        tool_obj = tools[tool_name]
+        
+        # Handle different tool types
+        if tool_name == "search_knowledge_base":
+            # Tool object - use .invoke() method
+            result = tool_obj.invoke(params)
+            return {"status": "success", "result": result}
+        else:
+            # @tool decorated function - call directly
+            result = tool_obj(params)
+            return result
+            
+    except Exception as e:
+        return {"status": "error", "message": f"Tool execution failed: {str(e)}"}
 
 def test_search_knowledge_base_success():
     """Test successful knowledge base search"""

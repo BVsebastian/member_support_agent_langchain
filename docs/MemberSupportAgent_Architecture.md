@@ -399,6 +399,31 @@ Response (200 OK):
 - File names: `App.jsx`, `ChatWindow.jsx`, `chat.js` (no .ts/.tsx files)
 - The UI is complete, styled, and responsive, focused on core functionality (no bubble animations or extra polish tasks)
 
+## 🚀 Potential Future Enhancements
+
+### Tool Call Order Management
+
+To ensure specific tools are called in a desired order without altering the core workflow, consider the following strategies:
+
+1. **Prompt Engineering**: Modify the prompt template to include instructions that guide the agent to call `record_user_details` before `send_notification`. This can be done by adding explicit instructions or examples in the system prompt that emphasize the desired order of operations.
+
+2. **Tool Logic**: Adjust the logic within the tools themselves to check if prerequisites have been met. For example, `send_notification` could check if `record_user_details` has been executed and handle the situation accordingly.
+
+3. **State Management**: Implement a simple state management system within the agent's memory to track which tools have been called. This can be used to influence the agent's decision-making process.
+
+4. **Custom Tool Wrappers**: Create wrapper functions for the tools that enforce the desired order. These wrappers can be bound to the language model instead of the original tools.
+
+These strategies can help maintain the current workflow while ensuring the correct sequence of tool calls. They can be explored further as the project evolves.
+
+### Deployment Status
+
+- **Frontend**: Successfully deployed to Vercel.
+- **Backend**: Deployed on Railway.
+
+### Recent Changes
+
+- **handle_tool_call**: Moved to `test_tools.py` for testing purposes and removed from the main workflow.
+
 ```
 
 ```
