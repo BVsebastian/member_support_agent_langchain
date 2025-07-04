@@ -1,0 +1,12 @@
+{
+  "timestamp": "2025-07-04T12:44:44.019884",
+  "original_request": "Fraud issue",
+  "contact_info": {
+    "name": "Ben",
+    "email": "ben@gmail.com",
+    "phone": "1234567891"
+  },
+  "issue_type": "fraud",
+  "pushover_sent": true,
+  "status": "pending"
+}

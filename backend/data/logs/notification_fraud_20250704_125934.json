@@ -1,0 +1,12 @@
+{
+  "timestamp": "2025-07-04T12:59:34.545550",
+  "original_request": "Fraud issue reported by user.",
+  "contact_info": {
+    "name": "",
+    "email": "",
+    "phone": ""
+  },
+  "issue_type": "fraud",
+  "pushover_sent": true,
+  "status": "pending"
+}
