@@ -108,7 +108,7 @@ export default function ChatWindow() {
   };
 
   return (
-    <div className="bg-white shadow-lg w-4/5 mx-auto flex flex-col h-screen">
+    <div className="bg-white shadow-lg w-full flex flex-col h-screen">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
         <div className="flex items-center space-x-3">
