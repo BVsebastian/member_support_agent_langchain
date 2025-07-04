@@ -54,16 +54,16 @@ member_support_agent/
 
 ## 🧠 Agent Architecture Overview
 
-### **NEW: Agent-Based Architecture**
+### **UPDATED: Agent-Based Architecture**
 
-- **AgentExecutor**: Orchestrates tool calling and reasoning
-- **create_tool_calling_agent**: Creates agent with structured tool calls
+- **AgentExecutor**: Orchestrates tool calling and reasoning, now properly utilized for all interactions
+- **create_tool_calling_agent**: Creates agent with structured tool calls, ensuring `search_knowledge_base` is always used first
 - **ConversationBufferMemory**: Maintains conversation history
-- **Tool Integration**: Proper tool calling with structured output
+- **Tool Integration**: Proper tool calling with structured output, no more forced search
 
 ### **Tool System**
 
-- **search_knowledge_base**: LangChain retriever tool for knowledge base queries
+- **search_knowledge_base**: LangChain retriever tool for knowledge base queries, always called first
 - **record_user_details**: Records user contact information
 - **send_notification**: Sends escalation notifications
 - **log_unknown_question**: Logs unanswered questions

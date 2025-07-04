@@ -62,7 +62,7 @@
 - `tests/test_tools.py` - Comprehensive test suite (moved to tests folder)
 - `tests/test_pushover.py` - Pushover alerts test script
 
-## 7. **NEW: Agent Architecture Implementation**
+## 7. **UPDATED: Agent Architecture Implementation**
 
 - [x] 7.1 Replace ConversationalRetrievalChain with AgentExecutor
 - [x] 7.2 Implement `create_tool_calling_agent` for structured tool calls
