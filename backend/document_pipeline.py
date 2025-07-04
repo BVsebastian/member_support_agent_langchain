@@ -5,7 +5,7 @@ from langchain_community.document_loaders import PyMuPDFLoader
 from langchain.schema import Document
 from langchain.text_splitter import CharacterTextSplitter
 from config.constants import PDF_DIR
-from config.constants import CHUNK_SIZE, CHUNK_OVERLAP
+from config.constants import CHUNK_SIZE, CHUNK_OVERLAP, VECTOR_DB_DIR
 from langchain_openai import OpenAIEmbeddings
 from langchain_chroma import Chroma
 
@@ -17,7 +17,7 @@ class DocumentPipeline:
         self.documents = []
         self.chunks = []
         self.embeddings = []
-        self.db_name = "data/vector_db"
+        self.db_name = VECTOR_DB_DIR
         self.vectorstore = None
 
     def load_documents(self, pdf_dir: str = PDF_DIR) -> List[Document]:

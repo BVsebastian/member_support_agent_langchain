@@ -14,13 +14,39 @@ from document_pipeline import DocumentPipeline
 
 # Initialize document pipeline for retriever tool
 _document_pipeline = DocumentPipeline()
-_retriever = _document_pipeline.get_retriever()
+
+# Check if vector database needs to be populated
+try:
+    _retriever = _document_pipeline.get_retriever()
+    # Test if the vector database has documents by checking the vectorstore directly
+    vectorstore = _document_pipeline.vectorstore
+    if not vectorstore:
+        # Try to load existing vectorstore
+        from langchain_openai import OpenAIEmbeddings
+        from langchain_chroma import Chroma
+        embeddings = OpenAIEmbeddings()
+        vectorstore = Chroma(persist_directory=_document_pipeline.db_name, embedding_function=embeddings)
+        _document_pipeline.vectorstore = vectorstore
+    
+    # Check if vectorstore has documents
+    doc_count = vectorstore._collection.count() if vectorstore else 0
+    if doc_count == 0:
+        print("Vector database is empty, processing documents...")
+        _document_pipeline.process_documents()
+        _retriever = _document_pipeline.get_retriever()
+    else:
+        print(f"Vector database loaded with {doc_count} documents")
+        
+except Exception as e:
+    print(f"Vector database not found or empty, processing documents: {e}")
+    _document_pipeline.process_documents()
+    _retriever = _document_pipeline.get_retriever()
 
 # Create retriever tool using LangChain's create_retriever_tool
 search_knowledge_base = create_retriever_tool(
     retriever=_retriever,
     name="search_knowledge_base",
-    description="Search the credit union knowledge base for relevant information about accounts, loans, cards, services, and policies. Use this to find answers about credit union services."
+    description="Search the credit union knowledge base for relevant information. Use this to find answers about credit union services."
 )
 
 @tool
