@@ -197,3 +197,34 @@
 - **Icons**: Using Heroicons (built into TailwindCSS) - no additional dependencies
 
 > **Note:** ChatWindow now matches the reference UI, is centered, and uses correct colors, icons, and font sizes.
+
+## 12. Supabase Integration with FastAPI
+
+- [ ] 12.1 Set Up Supabase
+
+  - [x] 12.1.1 Create a Supabase account and project
+  - [ ] 12.1.2 Configure database tables and schema
+
+- [x] 12.2 Configure FastAPI to Connect to Supabase
+
+  - [x] 12.2.1 Install Supabase client library
+  - [x] 12.2.2 Update FastAPI settings with Supabase URL and API key
+  - [x] 12.2.3 Test Supabase connection
+
+- [ ] 12.3 Implement CRUD Operations
+
+  - [ ] 12.3.1 Use Supabase API for creating, reading, updating, and deleting records
+  - [ ] 12.3.2 Write unit tests for CRUD operations
+
+- [ ] 12.4 Authentication and Real-Time Features
+
+  - [ ] 12.4.1 Implement Supabase authentication
+  - [ ] 12.4.2 Utilize real-time data synchronization
+
+- [ ] 12.5 Documentation and Testing
+  - [ ] 12.5.1 Update documentation to include Supabase setup and usage
+  - [ ] 12.5.2 Conduct integration testing to ensure seamless operation with the existing system
+
+### Recent Changes
+
+- **handle_tool_call**: Moved to `test_tools.py` for testing purposes and removed from the main workflow.
