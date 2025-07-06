@@ -1,0 +1,18 @@
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL
+);
+
+CREATE TABLE conversations (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id),
+  started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE messages (
+  id SERIAL PRIMARY KEY,
+  conversation_id INTEGER REFERENCES conversations(id),
+  content TEXT NOT NULL,
+  sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

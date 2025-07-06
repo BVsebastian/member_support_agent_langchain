@@ -200,10 +200,10 @@
 
 ## 12. Supabase Integration with FastAPI
 
-- [ ] 12.1 Set Up Supabase
+- [x] 12.1 Set Up Supabase
 
   - [x] 12.1.1 Create a Supabase account and project
-  - [ ] 12.1.2 Configure database tables and schema
+  - [x] 12.1.2 Configure database tables and schema
 
 - [x] 12.2 Configure FastAPI to Connect to Supabase
 
@@ -211,19 +211,37 @@
   - [x] 12.2.2 Update FastAPI settings with Supabase URL and API key
   - [x] 12.2.3 Test Supabase connection
 
-- [ ] 12.3 Implement CRUD Operations
+- [x] 12.3 Implement CRUD Operations
 
-  - [ ] 12.3.1 Use Supabase API for creating, reading, updating, and deleting records
-  - [ ] 12.3.2 Write unit tests for CRUD operations
+  - [x] 12.3.1 Create dedicated Supabase CRUD module
+  - [x] 12.3.2 Use Supabase API for creating, reading, updating, and deleting records
+  - [x] 12.3.3 Write unit tests for CRUD operations
 
-- [ ] 12.4 Authentication and Real-Time Features
+### ✅ Task 12.3.3 Completed Files:
 
-  - [ ] 12.4.1 Implement Supabase authentication
-  - [ ] 12.4.2 Utilize real-time data synchronization
+- `tests/test_crud_operations.py` - **NEW**: Comprehensive unit tests for all CRUD operations
+- `backend/database.py` - **UPDATED**: Fixed deprecated `.dict()` methods to use `.model_dump()`
+- **Test Coverage**: 14 tests covering Users, Conversations, and Messages CRUD operations
+- **Schema Alignment**: Updated models to match actual database schema (removed non-existent fields)
+- **Foreign Key Handling**: Proper cleanup order to respect database constraints
+- **Test Features**: Unique test data generation, proper resource cleanup, comprehensive assertions
 
-- [ ] 12.5 Documentation and Testing
-  - [ ] 12.5.1 Update documentation to include Supabase setup and usage
-  - [ ] 12.5.2 Conduct integration testing to ensure seamless operation with the existing system
+### 🧪 Test Results:
+
+- **14 tests passed** - All CRUD operations working correctly
+- **Schema-compliant models** - Aligned with actual database structure
+- **Proper cleanup** - Foreign key constraints respected (messages → conversations → users)
+- **Comprehensive coverage** - Create, Read, Update, Delete operations for all entities
+
+## 13. Authentication and Real-Time Features
+
+- [ ] 13.1 Implement Supabase authentication
+- [ ] 13.2 Utilize real-time data synchronization
+
+## 14. Documentation and Testing
+
+- [ ] 14.1 Update documentation to include Supabase setup and usage
+- [ ] 14.2 Conduct integration testing to ensure seamless operation with the existing system
 
 ### Recent Changes
 
