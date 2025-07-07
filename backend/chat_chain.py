@@ -62,17 +62,85 @@ class ChatChain:
             verbose=True,  # Enable verbose to see tool calls
             max_iterations=5
         )
+        
+        # Session management
+        self.session_conversations = {}  # session_id -> conversation_id
 
-    def get_response(self, message: str) -> str:
-        """Get response using the agent executor with verbose logging"""
+    def get_or_create_conversation(self, session_id: str) -> int:
+        """Get existing conversation or create new one for session"""
+        from database import ConversationCRUD, UserCRUD, ConversationCreate, UserCreate
+        
+        # Check if session already has a conversation
+        if session_id in self.session_conversations:
+            return self.session_conversations[session_id]
+        
+        # Create anonymous user for this session
+        try:
+            user = UserCRUD.create(UserCreate(
+                name="Anonymous",
+                email=f"anonymous_{session_id}@demo.com"
+            ))
+        except Exception:
+            # User might already exist, try to get by email
+            user = UserCRUD.get_by_email(f"anonymous_{session_id}@demo.com")
+            if not user:
+                raise Exception("Failed to create or retrieve user")
+        
+        # Create new conversation for this session
+        conversation = ConversationCRUD.create(ConversationCreate(
+            user_id=user.id
+        ))
+        
+        # Store conversation ID for this session
+        self.session_conversations[session_id] = conversation.id
+        
+        print(f"📝 SESSION: Created conversation {conversation.id} for session {session_id}")
+        return conversation.id
+
+    def store_message(self, conversation_id: int, content: str, sender: str = "user"):
+        """Store message in database"""
+        from database import MessageCRUD, MessageCreate
+        
+        try:
+            message = MessageCRUD.create(MessageCreate(
+                conversation_id=conversation_id,
+                content=content
+            ))
+            print(f"💾 MESSAGE: Stored {sender} message in conversation {conversation_id}")
+            return message
+        except Exception as e:
+            print(f"❌ MESSAGE STORAGE ERROR: {e}")
+            return None
+
+    def get_response(self, message: str, session_id: str = None) -> str:
+        """Get response using the agent executor with verbose logging and session management"""
         try:
             print(f"🎯 AGENT EXECUTOR: Processing message: '{message}'")
             
-            # Use the agent executor that's already configured
-            response = self.executor.invoke({"input": message})
+            # Handle session management if session_id provided
+            conversation_id = None
+            if session_id:
+                conversation_id = self.get_or_create_conversation(session_id)
+                # Store user message
+                self.store_message(conversation_id, message, "user")
             
-            print(f"🤖 AGENT RESPONSE: {response.get('output', 'No output')[:100]}...")
-            return response.get('output', 'I apologize, but I encountered an issue processing your request.')
+            # Create enhanced input with session context for tools
+            enhanced_input = message
+            if session_id:
+                enhanced_input = f"Session ID: {session_id}\n\nUser Message: {message}"
+            
+            # Use the agent executor that's already configured
+            response = self.executor.invoke({"input": enhanced_input})
+            
+            # Extract the response text
+            response_text = response.get('output', 'I apologize, but I encountered an issue processing your request.')
+            
+            # Store agent response if we have a conversation
+            if conversation_id:
+                self.store_message(conversation_id, response_text, "agent")
+            
+            print(f"🤖 AGENT RESPONSE: {response_text[:100]}...")
+            return response_text
                 
         except Exception as e:
             print(f"❌ AGENT ERROR: {e}")

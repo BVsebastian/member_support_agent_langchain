@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-07-06T23:15:04.626405",
+  "question": "What are your international wire transfer fees?",
+  "context": {
+    "user_id": "12345",
+    "session_id": "abc123"
+  },
+  "status": "unanswered"
+}

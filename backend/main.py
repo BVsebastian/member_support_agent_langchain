@@ -36,7 +36,7 @@ chat_chain = ChatChain()
 # Request/Response models
 class ChatRequest(BaseModel):
     message: str
-    user_id: str = "default"
+    session_id: str
 
 class ChatResponse(BaseModel):
     response: str
@@ -50,7 +50,7 @@ async def ping():
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     """Chat endpoint that accepts messages and returns responses"""
-    response = chat_chain.get_response(request.message)
+    response = chat_chain.get_response(request.message, request.session_id)
     return ChatResponse(
         response=response
     )

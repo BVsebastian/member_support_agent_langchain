@@ -8,24 +8,27 @@
 member_support_agent/
 ├── frontend/                        # React frontend
 ├── backend/                         # FastAPI + LangChain Agent
-│   ├── main.py
-│   ├── chat_chain.py
-│   ├── document_pipeline.py
-│   ├── tools.py
-│   ├── pushover_alerts.py
-│   ├── prompt_manager.py
-│   ├── response_templates.py
-│   ├── agent_identity.md
-│   ├── state.py
+│   ├── main.py                      # FastAPI app with chat endpoints
+│   ├── chat_chain.py                # LangChain AgentExecutor
+│   ├── document_pipeline.py         # PDF processing and vector storage
+│   ├── database.py                  # Supabase CRUD operations
+│   ├── tools.py                     # Agent tools for escalation
+│   ├── pushover_alerts.py           # Notification system
+│   ├── prompt_manager.py            # AI system prompts
+│   ├── response_templates.py        # Response templates
+│   ├── agent_identity.md            # Alexa's personality
 │   └── config/
 ├── tests/                           # Test files
 │   ├── test_document_pipeline.py
 │   ├── test_tools.py
+│   ├── test_crud_operations.py
 │   └── test_main.py
 ├── data/
-│   ├── knowledge_base/
-│   ├── logs/
-│   └── vector_db/
+│   ├── knowledge_base/              # PDF documents
+│   ├── logs/                        # Application logs
+│   └── vector_db/                   # ChromaDB storage
+├── supabase/                        # Database migrations
+│   └── migrations/
 ├── .env
 ├── pyproject.toml                   # UV dependency management
 └── README.md
@@ -40,16 +43,17 @@ member_support_agent/
 | `main.py`                         | FastAPI app with `/chat` endpoint that handles POST requests from React frontend                                                                      |
 | `chat_chain.py`                   | **NEW**: Builds LangChain's `AgentExecutor` with `create_tool_calling_agent` using memory + tools                                                     |
 | `document_pipeline.py`            | Loads all PDFs via `PyMuPDFLoader`, chunks them with `CharacterTextSplitter`, creates embeddings with `OpenAIEmbeddings`, and stores them in `Chroma` |
+| `database.py`                     | **UPDATED**: Supabase CRUD operations for conversations, messages, and users (no authentication)                                                      |
 | `prompt_manager.py`               | **UPDATED**: Loads system prompt with comprehensive escalation triggers and mandatory tool usage guidelines                                           |
 | `response_templates.py`           | Provides standard response templates for welcome, escalation, and knowledge-not-found scenarios                                                       |
 | `agent_identity.md`               | Markdown file defining Alexa's personality, communication style, guardrails, and response guidelines                                                  |
-| `state.py`                        | Stores session metadata: `chat_history`, user flags, etc.                                                                                             |
 | `pushover_alerts.py`              | Sends alerts for unresolved or unknown queries                                                                                                        |
 | `tools.py`                        | **UPDATED**: LangChain tools with `@tool` decorators + `create_retriever_tool` + central `handle_tool_call()` dispatcher                              |
 | `config/constants.py`             | Configuration for chunk size, retriever behavior                                                                                                      |
 | `config/secrets.env`              | Secret keys like `OPENAI_API_KEY`, `PUSHOVER_TOKEN`                                                                                                   |
 | `tests/test_document_pipeline.py` | Tests document loading, chunking, and vectorstore creation                                                                                            |
 | `tests/test_tools.py`             | **UPDATED**: Tests for new tool interface and agent integration                                                                                       |
+| `tests/test_crud_operations.py`   | **NEW**: Tests for database CRUD operations                                                                                                           |
 | `tests/test_main.py`              | Tests FastAPI endpoints and integration                                                                                                               |
 
 ## 🧠 Agent Architecture Overview
@@ -103,18 +107,40 @@ member_support_agent/
 - **Guardrails**: Knowledge base boundaries, confidentiality, financial advice limits, security protocols
 - **Response Guidelines**: Always/Never rules for professional conduct
 
-### **NEW: Escalation Triggers (prompt_manager.py)**
+### **NEW: Comprehensive Escalation System (prompt_manager.py)**
+
+#### **Automated Escalation Triggers**
 
 - **Specific Issue Types**: "fraud", "loan", "card", "account", "refinance"
 - **Human Assistance Requests**: "manager", "supervisor", "human representative", "speak to someone"
 - **Direct Escalation Requests**: "escalate", "escalation", "transfer me", "connect me to"
 - **Dissatisfaction Indicators**: "complaint", "unhappy", "not satisfied"
 
-### **NEW: Mandatory Tool Usage**
+#### **Mandatory Tool Usage Flow**
 
-- **Escalation Flow**: record_user_details → send_notification
-- **Service Queries**: search_knowledge_base first
-- **Unknown Questions**: log_unknown_question
+- **Always Search First**: search_knowledge_base for every question (no exceptions)
+- **Escalation Flow**: record_user_details → send_notification (strict sequential execution)
+- **Service Queries**: search_knowledge_base first, then provide accurate information
+- **Unknown Questions**: log_unknown_question when knowledge base lacks information
+- **Tool Validation**: send_notification requires contact info and session_id validation
+
+#### **Database Integration**
+
+- **Escalations Table**: Tracks issue_type, original_request, status, conversation_id
+- **Status Tracking**: "pending", "notified", "in_progress", "resolved"
+- **Conversation Linking**: Links escalations to chat conversations for full context
+- **Contact Information**: Name, email, phone captured for human follow-up
+- **Session Management**: Anonymous users with preserved session emails for reliable lookup
+- **Escalation Records**: Successfully created and tracked in Supabase database
+
+#### **Notification System**
+
+- **Pushover Integration**: Real-time alerts to support staff with high priority
+- **Structured Messages**: Issue type, contact info, conversation context (last 5 messages)
+- **Escalation ID**: Unique tracking for each escalation request
+- **Human Handoff**: Complete conversation history for seamless transitions
+- **Contact Validation**: Ensures contact information is provided before sending notifications
+- **Error Handling**: Comprehensive error messages for missing data or failed operations
 
 ### Response Templates (response_templates.py)
 
@@ -366,6 +392,7 @@ Response (200 OK):
 | ----------------- | -------------------------------------------- | ------------------------------------------------ |
 | **AgentExecutor** | **NEW**: Chat history, tool calls            | **NEW**: In-memory with ConversationBufferMemory |
 | `vector_db/`      | PDF embeddings                               | Persistent (ChromaDB folder)                     |
+| `supabase/`       | Conversations, messages, users               | Persistent (PostgreSQL database)                 |
 | `logs/`           | Unknown questions, escalations, user details | File-based JSON                                  |
 | React `App.jsx`   | UI state, chat session                       | Browser memory                                   |
 
@@ -428,17 +455,38 @@ These strategies can help maintain the current workflow while ensuring the corre
 
 #### Supabase with FastAPI
 
-To store conversation data, we will integrate Supabase with FastAPI. Below is the integration plan:
+The Member Support Agent uses Supabase to store conversation data for escalation follow-ups and conversation history. The database structure is:
 
-1. **Set Up Supabase**: Create a Supabase account and project.
-2. **Configure Database**: Use the Supabase dashboard to create tables and manage schema.
-3. **Obtain API Keys**: Get the Supabase URL and API key from the dashboard.
-4. **Integrate with FastAPI**: Install the Supabase client library and configure FastAPI to connect to Supabase.
-5. **Implement CRUD Operations**: Use Supabase's API to perform CRUD operations.
-6. **Authentication and Real-Time Features**: Utilize Supabase's built-in authentication and real-time capabilities.
-7. **Test the Integration**: Ensure data can be stored and retrieved correctly from Supabase.
+**Tables:**
 
-This integration will allow us to efficiently store and manage conversation data, enhancing the functionality of the Member Support Agent.
+- **users**: `id`, `name`, `email` (for escalation contact info)
+- **conversations**: `id`, `user_id`, `started_at` (chat sessions)
+- **messages**: `id`, `conversation_id`, `content`, `sent_at` (chat messages)
+- **escalations**: `id`, `conversation_id`, `issue_type`, `original_request`, `status`, `created_at`, `resolved_at` (escalation tracking)
+
+**Integration Status:**
+
+- ✅ **Supabase Setup**: Project created and configured
+- ✅ **Database Schema**: Tables created via migrations
+- ✅ **CRUD Operations**: Complete operations in `database.py`
+- ✅ **FastAPI Integration**: Endpoints for conversation management
+- ✅ **Testing**: Comprehensive test suite in `test_crud_operations.py`
+
+**Purpose:**
+
+- Store conversation history for context
+- Track user information for escalation follow-ups
+- Maintain chat sessions across browser sessions
+- Enable conversation analytics and improvement
+- **NEW**: Track escalation requests with full conversation context for human handoffs
+- **NEW**: Monitor escalation status and resolution tracking
+- **NEW**: Successfully tested escalation flow with database integration and notifications
+
+**No Authentication Required:**
+
+- Users are anonymous (no login required)
+- Conversations tracked by session ID
+- User info only collected when escalation needed
 
 ```
 

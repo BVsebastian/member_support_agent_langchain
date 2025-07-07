@@ -67,6 +67,24 @@ class Message(MessageBase):
     id: int
     sent_at: datetime
 
+class EscalationBase(BaseModel):
+    conversation_id: int
+    issue_type: str
+    original_request: str
+    status: str = "pending"
+
+class EscalationCreate(EscalationBase):
+    pass
+
+class EscalationUpdate(BaseModel):
+    status: Optional[str] = None
+    resolved_at: Optional[datetime] = None
+
+class Escalation(EscalationBase):
+    id: int
+    created_at: datetime
+    resolved_at: Optional[datetime] = None
+
 # CRUD Operations for Users
 class UserCRUD:
     @staticmethod
@@ -241,4 +259,52 @@ def add_message_to_conversation(conversation_id: int, content: str, **kwargs) ->
         content=content,
         **kwargs
     )
-    return MessageCRUD.create(message_data) 
+    return MessageCRUD.create(message_data)
+
+# CRUD Operations for Escalations
+class EscalationCRUD:
+    @staticmethod
+    def create(escalation: EscalationCreate) -> Escalation:
+        """Create a new escalation"""
+        response = supabase.table("escalations").insert(escalation.model_dump()).execute()
+        if response.data:
+            return Escalation(**response.data[0])
+        raise Exception("Failed to create escalation")
+
+    @staticmethod
+    def get(escalation_id: int) -> Optional[Escalation]:
+        """Get escalation by ID"""
+        response = supabase.table("escalations").select("*").eq("id", escalation_id).execute()
+        if response.data:
+            return Escalation(**response.data[0])
+        return None
+
+    @staticmethod
+    def get_by_conversation(conversation_id: int) -> List[Escalation]:
+        """Get all escalations for a conversation"""
+        response = supabase.table("escalations").select("*").eq("conversation_id", conversation_id).execute()
+        return [Escalation(**esc) for esc in response.data] if response.data else []
+
+    @staticmethod
+    def get_all() -> List[Escalation]:
+        """Get all escalations"""
+        response = supabase.table("escalations").select("*").execute()
+        return [Escalation(**esc) for esc in response.data] if response.data else []
+
+    @staticmethod
+    def update(escalation_id: int, escalation_update: EscalationUpdate) -> Optional[Escalation]:
+        """Update escalation"""
+        update_data = {k: v for k, v in escalation_update.model_dump().items() if v is not None}
+        if not update_data:
+            return EscalationCRUD.get(escalation_id)
+        
+        response = supabase.table("escalations").update(update_data).eq("id", escalation_id).execute()
+        if response.data:
+            return Escalation(**response.data[0])
+        return None
+
+    @staticmethod
+    def delete(escalation_id: int) -> bool:
+        """Delete escalation"""
+        response = supabase.table("escalations").delete().eq("id", escalation_id).execute()
+        return len(response.data) > 0 if response.data else False 

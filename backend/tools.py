@@ -50,14 +50,56 @@ search_knowledge_base = create_retriever_tool(
 )
 
 @tool
-def send_notification(original_request: str, issue_type: str, contact_name: str = "", contact_email: str = "", contact_phone: str = "") -> Dict[str, Any]:
-    """Send notification for escalation. Use when user needs escalation for loan, card, account, fraud, or refinance issues."""
-    print(f"DEBUG: send_notification called with issue_type='{issue_type}', contact_name='{contact_name}', contact_email='{contact_email}'")
+def send_notification(original_request: str, issue_type: str, session_id: str = "", contact_name: str = "", contact_email: str = "", contact_phone: str = "") -> Dict[str, Any]:
+    """Send notification for escalation with conversation context. Use when user needs escalation for loan, card, account, fraud, or refinance issues. ONLY call this AFTER record_user_details has been successfully executed."""
+    print(f"DEBUG: send_notification called with issue_type='{issue_type}', session_id='{session_id}', contact_name='{contact_name}', contact_email='{contact_email}'")
     try:
         # Validate issue_type
         valid_types = ["loan", "card", "account", "fraud", "refinance"]
         if issue_type not in valid_types:
             return {"status": "error", "message": f"Invalid issue_type. Must be one of: {valid_types}"}
+        
+        # Check if session_id is provided
+        if not session_id:
+            return {"status": "error", "message": "Session ID is required for escalation notification"}
+        
+        # Check if contact information is provided
+        if not contact_name or not contact_email:
+            return {"status": "error", "message": "Contact information (name and email) is required. Please call record_user_details first to capture user details."}
+        
+        # Import database models
+        from database import EscalationCRUD, EscalationCreate, ConversationCRUD, UserCRUD
+        
+        # Get conversation context if session_id provided
+        conversation_context = ""
+        escalation_id = None
+        
+        if session_id:
+            # Find the user for this session
+            anonymous_email = f"anonymous_{session_id}@demo.com"
+            user = UserCRUD.get_by_email(anonymous_email)
+            
+            if not user:
+                return {"status": "error", "message": "No user found for this session. Please call record_user_details first."}
+            
+            # Get user's conversations
+            conversations = ConversationCRUD.get_by_user(user.id)
+            if conversations:
+                latest_conversation = conversations[-1]  # Most recent conversation
+                
+                # Create escalation record
+                escalation = EscalationCRUD.create(EscalationCreate(
+                    conversation_id=latest_conversation.id,
+                    issue_type=issue_type,
+                    original_request=original_request
+                ))
+                escalation_id = escalation.id
+                
+                # Get conversation messages for context
+                from database import MessageCRUD
+                messages = MessageCRUD.get_by_conversation(latest_conversation.id)
+                if messages:
+                    conversation_context = "\n".join([f"{msg.content}" for msg in messages[-5:]])  # Last 5 messages
         
         # Create contact_info dictionary from individual parameters
         contact_info = {
@@ -66,36 +108,25 @@ def send_notification(original_request: str, issue_type: str, contact_name: str 
             "phone": contact_phone
         }
         
-        # Create notification message
+        # Create enhanced notification message with context
         message = f"ESCALATION: {issue_type.upper()}\nRequest: {original_request}\nContact: {contact_info}"
+        if conversation_context:
+            message += f"\n\nConversation Context:\n{conversation_context}"
+        if escalation_id:
+            message += f"\n\nEscalation ID: {escalation_id}"
+            
         title = f"Member Support - {issue_type.title()} Issue"
         
         # Send Pushover notification
         push_success = push(message, title)
         
-        # Create notification data for logging
-        notification = {
-            "timestamp": datetime.now().isoformat(),
-            "original_request": original_request,
-            "contact_info": contact_info,
-            "issue_type": issue_type,
-            "pushover_sent": push_success,
-            "status": "pending"
-        }
-        
-        # Save to logs directory
-        logs_dir = "data/logs"
-        os.makedirs(logs_dir, exist_ok=True)
-        
-        filename = f"notification_{issue_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-        filepath = os.path.join(logs_dir, filename)
-        
-        with open(filepath, 'w') as f:
-            json.dump(notification, f, indent=2)
+        # Update escalation record with notification status
+        if escalation_id and push_success:
+            EscalationCRUD.update(escalation_id, {"status": "notified"})
         
         if push_success:
-            result = {"status": "success", "message": f"Notification sent for {issue_type} issue"}
-            print(f"DEBUG: send_notification success")
+            result = {"status": "success", "message": f"Notification sent for {issue_type} issue", "escalation_id": escalation_id}
+            print(f"DEBUG: send_notification success - escalation {escalation_id}")
             return result
         else:
             result = {"status": "error", "message": f"Failed to send Pushover notification for {issue_type} issue"}
@@ -108,32 +139,44 @@ def send_notification(original_request: str, issue_type: str, contact_name: str 
         return result
 
 @tool
-def record_user_details(name: str = "", email: str = "", phone: str = "", notes: str = "") -> Dict[str, Any]:
-    """Record user contact information for follow-up. Use when user provides any contact information."""
-    print(f"DEBUG: record_user_details called with name='{name}', email='{email}', phone='{phone}'")
+def record_user_details(name: str = "", email: str = "", phone: str = "", notes: str = "", session_id: str = "") -> Dict[str, Any]:
+    """Record user contact information for follow-up. Updates anonymous user with real details. Use when user provides any contact information."""
+    print(f"DEBUG: record_user_details called with name='{name}', email='{email}', phone='{phone}', session_id='{session_id}'")
     try:
-        # Create user details dictionary from individual parameters
-        user_details = {
-            "name": name,
-            "email": email,
-            "phone": phone,
-            "notes": notes,
-            "timestamp": datetime.now().isoformat(),
-            "status": "recorded"
-        }
+        if not session_id:
+            return {"status": "error", "message": "Session ID is required to update user details"}
         
-        # Save to logs directory
-        logs_dir = "data/logs"
-        os.makedirs(logs_dir, exist_ok=True)
+        # Import database models
+        from database import UserCRUD, UserUpdate
         
-        filename = f"user_details_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-        filepath = os.path.join(logs_dir, filename)
+        # Find the anonymous user for this session
+        anonymous_email = f"anonymous_{session_id}@demo.com"
+        user = UserCRUD.get_by_email(anonymous_email)
         
-        with open(filepath, 'w') as f:
-            json.dump(user_details, f, indent=2)
+        if not user:
+            return {"status": "error", "message": "No user found for this session"}
         
-        result = {"status": "success", "message": "User details recorded successfully"}
-        print(f"DEBUG: record_user_details success")
+        # Update user with real details
+        update_data = {}
+        if name:
+            update_data["name"] = name
+        # Update user with real details (keep email for session lookup)
+        update_data = {}
+        if name:
+            update_data["name"] = name
+        
+        # Create UserUpdate model with the data
+        user_update = UserUpdate(**update_data)
+        updated_user = UserCRUD.update(user.id, user_update)
+        
+        if not updated_user:
+            return {"status": "error", "message": "Failed to update user details"}
+        
+        # Store contact info for escalation (email and phone will be passed to send_notification)
+        print(f"DEBUG: Contact info stored - Name: {name}, Email: {email}, Phone: {phone}")
+        
+        result = {"status": "success", "message": f"User details updated successfully for {updated_user.name}"}
+        print(f"DEBUG: record_user_details success - updated user {updated_user.id}")
         return result
         
     except Exception as e:

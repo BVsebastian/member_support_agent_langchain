@@ -50,11 +50,27 @@ apiClient.interceptors.response.use(
   }
 );
 
+// Generate or retrieve session ID
+const getSessionId = () => {
+  let sessionId = localStorage.getItem("chatSessionId");
+  if (!sessionId) {
+    sessionId =
+      "session_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem("chatSessionId", sessionId);
+  }
+  return sessionId;
+};
+
 // Send message to chat endpoint
 const sendMessage = async (message) => {
   try {
-    // Send POST request to /chat endpoint
-    const response = await apiClient.post("/chat", { message });
+    const sessionId = getSessionId();
+
+    // Send POST request to chat endpoint with session ID
+    const response = await apiClient.post("/chat", {
+      message: message,
+      session_id: sessionId,
+    });
 
     // Return successful response
     return {
