@@ -1,23 +1,44 @@
-# 📐 Architecture Document: Member Support Agent (LangChain Agent Edition)
+# Architecture Document: Member Support Agent (LangChain Agent Edition)
 
 ---
 
-## 📁 File & Folder Structure
+## File & Folder Structure
 
 ```
 member_support_agent/
 ├── frontend/                        # React frontend
+│   ├── src/
+│   │   ├── components/
+│   │   │   └── ChatWindow.jsx      # Main chat interface component
+│   │   ├── api/
+│   │   │   └── chat.js             # API client for backend communication
+│   │   ├── assets/
+│   │   │   └── react.svg           # Static assets
+│   │   ├── App.jsx                 # Root application component
+│   │   ├── main.jsx                # Application entry point
+│   │   ├── index.css               # Global styles with TailwindCSS
+│   │   └── App.css                 # Component-specific styles
+│   ├── public/                     # Static files
+│   ├── dist/                       # Build output
+│   ├── package.json                # Dependencies and scripts
+│   ├── vite.config.js              # Vite configuration
+│   ├── tailwind.config.js          # TailwindCSS configuration
+│   ├── eslint.config.js            # ESLint configuration
+│   └── vercel.json                 # Vercel deployment config
 ├── backend/                         # FastAPI + LangChain Agent
-│   ├── main.py                      # FastAPI app with chat endpoints
-│   ├── chat_chain.py                # LangChain AgentExecutor
+│   ├── main.py                      # FastAPI app with comprehensive API endpoints
+│   ├── chat_chain.py                # LangChain AgentExecutor with tool integration
 │   ├── document_pipeline.py         # PDF processing and vector storage
 │   ├── database.py                  # Supabase CRUD operations
-│   ├── tools.py                     # Agent tools for escalation
+│   ├── tools.py                     # Agent tools for escalation and search
 │   ├── pushover_alerts.py           # Notification system
-│   ├── prompt_manager.py            # AI system prompts
+│   ├── prompt_manager.py            # AI system prompts and identity
 │   ├── response_templates.py        # Response templates
-│   ├── agent_identity.md            # Alexa's personality
+│   ├── agent_identity.md            # Alexa's personality and guidelines
+│   ├── debug_docs.py                # Document processing debug tool
+│   ├── gradio_test.py               # Gradio testing interface
 │   └── config/
+│       └── constants.py             # Configuration constants
 ├── tests/                           # Test files
 │   ├── test_document_pipeline.py
 │   ├── test_tools.py
@@ -36,27 +57,206 @@ member_support_agent/
 
 ---
 
-## ⚙️ Module Responsibilities
+## **UPDATED: Module Responsibilities & Data Flow**
 
-| File                              | Description                                                                                                                                           |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `main.py`                         | FastAPI app with `/chat` endpoint that handles POST requests from React frontend                                                                      |
-| `chat_chain.py`                   | **NEW**: Builds LangChain's `AgentExecutor` with `create_tool_calling_agent` using memory + tools                                                     |
-| `document_pipeline.py`            | Loads all PDFs via `PyMuPDFLoader`, chunks them with `CharacterTextSplitter`, creates embeddings with `OpenAIEmbeddings`, and stores them in `Chroma` |
-| `database.py`                     | **UPDATED**: Supabase CRUD operations for conversations, messages, and users (no authentication)                                                      |
-| `prompt_manager.py`               | **UPDATED**: Loads system prompt with comprehensive escalation triggers and mandatory tool usage guidelines                                           |
-| `response_templates.py`           | Provides standard response templates for welcome, escalation, and knowledge-not-found scenarios                                                       |
-| `agent_identity.md`               | Markdown file defining Alexa's personality, communication style, guardrails, and response guidelines                                                  |
-| `pushover_alerts.py`              | Sends alerts for unresolved or unknown queries                                                                                                        |
-| `tools.py`                        | **UPDATED**: LangChain tools with `@tool` decorators + `create_retriever_tool` + central `handle_tool_call()` dispatcher                              |
-| `config/constants.py`             | Configuration for chunk size, retriever behavior                                                                                                      |
-| `config/secrets.env`              | Secret keys like `OPENAI_API_KEY`, `PUSHOVER_TOKEN`                                                                                                   |
-| `tests/test_document_pipeline.py` | Tests document loading, chunking, and vectorstore creation                                                                                            |
-| `tests/test_tools.py`             | **UPDATED**: Tests for new tool interface and agent integration                                                                                       |
-| `tests/test_crud_operations.py`   | **NEW**: Tests for database CRUD operations                                                                                                           |
-| `tests/test_main.py`              | Tests FastAPI endpoints and integration                                                                                                               |
+### **Frontend Modules**
 
-## 🧠 Agent Architecture Overview
+| File                                     | Responsibility                                                                                       | Data Flow                                                                                 |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `frontend/src/main.jsx`                  | **Application Entry Point**: React app initialization and root rendering                             | Renders App component with StrictMode                                                     |
+| `frontend/src/App.jsx`                   | **Root Component**: Main application layout and ChatWindow integration                               | Provides layout container and renders ChatWindow component                                |
+| `frontend/src/components/ChatWindow.jsx` | **Chat Interface**: Complete chat UI with message handling, typing indicators, and real-time updates | Receives user input → Calls API → Displays responses → Manages conversation state         |
+| `frontend/src/api/chat.js`               | **API Client**: HTTP communication with backend, session management, error handling                  | Sends POST requests to `/chat` → Handles responses → Manages session IDs → Error handling |
+| `frontend/src/index.css`                 | **Global Styles**: TailwindCSS imports and global styling                                            | Provides base styles and TailwindCSS utilities                                            |
+| `frontend/src/App.css`                   | **Component Styles**: App-specific styling and layout                                                | Defines component-specific CSS classes and animations                                     |
+| `frontend/src/assets/react.svg`          | **Static Assets**: React logo and static images                                                      | Provides static assets for the application                                                |
+| `frontend/package.json`                  | **Dependencies**: Project dependencies, scripts, and metadata                                        | Manages npm packages, build scripts, and project configuration                            |
+| `frontend/vite.config.js`                | **Build Configuration**: Vite development server and build settings                                  | Configures development server, build process, and plugins                                 |
+| `frontend/tailwind.config.js`            | **Styling Configuration**: TailwindCSS theme and custom configuration                                | Defines color scheme, fonts, and custom TailwindCSS utilities                             |
+| `frontend/eslint.config.js`              | **Code Quality**: ESLint rules and code formatting                                                   | Enforces code quality standards and formatting rules                                      |
+| `frontend/vercel.json`                   | **Deployment Configuration**: Vercel deployment settings                                             | Configures Vercel deployment, routing, and environment variables                          |
+
+### **Backend Modules**
+
+| File                            | Responsibility                                                                                          | Data Flow                                                                                      |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `backend/main.py`               | **API Gateway**: FastAPI application with 20+ endpoints for CRUD operations and chat interface          | Receives HTTP requests → Routes to appropriate handlers → Returns JSON responses               |
+| `backend/chat_chain.py`         | **AI Agent Brain**: LangChain AgentExecutor with tool integration and session management                | Processes user messages → Calls tools → Generates AI responses → Manages conversation memory   |
+| `backend/database.py`           | **Data Persistence**: Complete Supabase CRUD operations for users, conversations, messages, escalations | Handles database operations → Manages Pydantic models → Provides data validation               |
+| `backend/tools.py`              | **Agent Tools**: LangChain tools for search, user details, notifications, and logging                   | Agent calls tools → Tools execute actions → Results integrated into responses                  |
+| `backend/document_pipeline.py`  | **Knowledge Base Engine**: PDF processing, chunking, embedding, and vector storage                      | Loads PDFs → Chunks documents → Creates embeddings → Stores in ChromaDB → Provides retriever   |
+| `backend/prompt_manager.py`     | **AI Personality**: System prompts, escalation triggers, and mandatory tool usage guidelines            | Defines agent behavior → Manages escalation rules → Provides tool usage instructions           |
+| `backend/pushover_alerts.py`    | **Notification System**: Real-time alerts to support staff via Pushover API                             | Sends high-priority notifications → Includes conversation context → Tracks escalation status   |
+| `backend/response_templates.py` | **Response Templates**: Standard response templates for common scenarios                                | Provides consistent responses → Handles welcome, escalation, and error messages                |
+| `backend/agent_identity.md`     | **AI Identity**: Alexa's personality, communication style, and professional guidelines                  | Defines agent personality → Sets communication standards → Establishes professional boundaries |
+| `backend/debug_docs.py`         | **Development Tool**: Debug script for testing document processing pipeline                             | Tests document loading → Validates vector storage → Provides development debugging             |
+| `backend/gradio_test.py`        | **Testing Interface**: Gradio web interface for testing AI agent functionality                          | Provides web-based testing → Enables agent testing → Offers example queries                    |
+| `backend/config/constants.py`   | **Configuration**: Document processing settings, file paths, and system constants                       | Defines chunk sizes → Sets file paths → Configures embedding models                            |
+
+---
+
+## **Complete Data Flow Architecture**
+
+### **Frontend Data Flow**
+
+```
+User Input → ChatWindow.jsx → chat.js → Backend API → Response → UI Update
+     ↓              ↓              ↓           ↓           ↓           ↓
+1. User types    2. Component   3. HTTP     4. FastAPI   5. JSON     6. Display
+   message         captures       request      processes    response     response
+   in input        input and      to backend   request      to frontend  in chat
+   field           calls API      with         and calls    with AI      interface
+                   function       session_id   chat_chain   response
+```
+
+### **Backend Data Flow**
+
+```
+HTTP Request → main.py → chat_chain.py → tools.py → database.py → Response
+     ↓            ↓           ↓            ↓           ↓           ↓
+1. FastAPI     2. Route to   3. Agent     4. Execute   5. Store    6. Return
+   receives     chat_chain    processes    tools        data in     JSON
+   POST to      with          message      (search,     Supabase    response
+   /chat        session_id    and calls    record,      database    to frontend
+   endpoint     management    tools        notify)
+```
+
+### **Tool Execution Flow**
+
+```
+Agent Analysis → Tool Selection → Tool Execution → Result Integration → Response Generation
+      ↓              ↓              ↓                ↓                    ↓
+1. Agent         2. Agent        3. Tools        4. Tool results    5. AI generates
+   analyzes       selects         execute with    integrated into    final response
+   user input     appropriate     parameters      agent context      with context
+   and context    tools based     (search,        and memory        and returns
+   (escalation    on triggers     record,        updated            to frontend
+   detection)     and rules       notify, log)                      via main.py
+```
+
+### **Database Integration Flow**
+
+```
+Session Management → User Creation → Conversation Tracking → Message Storage → Escalation Records
+        ↓                ↓                ↓                    ↓                    ↓
+1. chat_chain     2. Creates       3. Links             4. Stores all       5. Tracks
+   manages         anonymous        conversations         messages with         escalation
+   session IDs     users for        to users            conversation        requests with
+   and creates     each session     and maintains       context and         full context
+   conversations   with unique      conversation         timestamps          for human
+                   email            history                                handoffs
+```
+
+---
+
+## **UPDATED: FastAPI API Endpoints (main.py)**
+
+### **Core Chat Endpoints**
+
+| Endpoint | Method | Purpose             | Request Body                          | Response                                                             |
+| -------- | ------ | ------------------- | ------------------------------------- | -------------------------------------------------------------------- |
+| `/ping`  | GET    | Health check        | None                                  | `{"status": "ok", "message": "Member Support Agent API is running"}` |
+| `/chat`  | POST   | Main chat interface | `{"message": str, "session_id": str}` | `{"response": str, "status": str}`                                   |
+
+### **User Management Endpoints**
+
+| Endpoint               | Method | Purpose           | Request Body       | Response                                   |
+| ---------------------- | ------ | ----------------- | ------------------ | ------------------------------------------ |
+| `/users/`              | POST   | Create new user   | `UserCreate` model | `User` model                               |
+| `/users/{user_id}`     | GET    | Get user by ID    | None               | `User` model                               |
+| `/users/`              | GET    | Get all users     | None               | `List[User]`                               |
+| `/users/email/{email}` | GET    | Get user by email | None               | `User` model                               |
+| `/users/{user_id}`     | PUT    | Update user       | `UserUpdate` model | `User` model                               |
+| `/users/{user_id}`     | DELETE | Delete user       | None               | `{"message": "User deleted successfully"}` |
+
+### **Conversation Management Endpoints**
+
+| Endpoint                           | Method | Purpose                  | Request Body               | Response                                           |
+| ---------------------------------- | ------ | ------------------------ | -------------------------- | -------------------------------------------------- |
+| `/conversations/`                  | POST   | Create new conversation  | `ConversationCreate` model | `Conversation` model                               |
+| `/conversations/{conversation_id}` | GET    | Get conversation by ID   | None                       | `Conversation` model                               |
+| `/conversations/`                  | GET    | Get all conversations    | None                       | `List[Conversation]`                               |
+| `/users/{user_id}/conversations`   | GET    | Get user's conversations | None                       | `List[Conversation]`                               |
+| `/conversations/{conversation_id}` | PUT    | Update conversation      | `ConversationUpdate` model | `Conversation` model                               |
+| `/conversations/{conversation_id}` | DELETE | Delete conversation      | None                       | `{"message": "Conversation deleted successfully"}` |
+
+### **Message Management Endpoints**
+
+| Endpoint                                    | Method | Purpose                   | Request Body          | Response                                      |
+| ------------------------------------------- | ------ | ------------------------- | --------------------- | --------------------------------------------- |
+| `/messages/`                                | POST   | Create new message        | `MessageCreate` model | `Message` model                               |
+| `/messages/{message_id}`                    | GET    | Get message by ID         | None                  | `Message` model                               |
+| `/messages/`                                | GET    | Get all messages          | None                  | `List[Message]`                               |
+| `/conversations/{conversation_id}/messages` | GET    | Get conversation messages | None                  | `List[Message]`                               |
+| `/messages/{message_id}`                    | PUT    | Update message            | `MessageUpdate` model | `Message` model                               |
+| `/messages/{message_id}`                    | DELETE | Delete message            | None                  | `{"message": "Message deleted successfully"}` |
+
+### **Convenience Endpoints**
+
+| Endpoint                                    | Method | Purpose                            | Parameters                                          | Response                   |
+| ------------------------------------------- | ------ | ---------------------------------- | --------------------------------------------------- | -------------------------- |
+| `/conversations/{conversation_id}/full`     | GET    | Get conversation with all messages | None                                                | `ConversationWithMessages` |
+| `/users/{user_id}/conversations`            | POST   | Create conversation for user       | `title: Optional[str]`                              | `Conversation` model       |
+| `/conversations/{conversation_id}/messages` | POST   | Add message to conversation        | `content: str, topic: Optional[str], private: bool` | `Message` model            |
+
+### **Database Models**
+
+#### **User Model**
+
+```python
+class User(BaseModel):
+    id: int
+    name: str
+    email: str
+    created_at: datetime
+    updated_at: datetime
+```
+
+#### **Conversation Model**
+
+```python
+class Conversation(BaseModel):
+    id: int
+    user_id: int
+    started_at: datetime
+    updated_at: datetime
+```
+
+#### **Message Model**
+
+```python
+class Message(BaseModel):
+    id: int
+    conversation_id: int
+    content: str
+    topic: Optional[str]
+    private: bool
+    sent_at: datetime
+```
+
+### **CORS Configuration**
+
+```python
+# Environment-based CORS configuration
+cors_origins = os.getenv("CORS_ORIGINS", "*").split(",")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+```
+
+**Supported Origins:**
+
+- Development: `*` (allows all origins)
+- Production: Specific domains via `CORS_ORIGINS` environment variable
+
+---
+
+## Agent Architecture Overview
 
 ### **UPDATED: Agent-Based Architecture**
 
@@ -78,7 +278,9 @@ member_support_agent/
 - **Context Awareness**: Agent remembers previous conversation context
 - **Conversation Summarization**: Can summarize previous interactions
 
-## 📄 DocumentPipeline Methods
+---
+
+## DocumentPipeline Methods
 
 | Method                 | Purpose                                     | Input          | Output                   |
 | ---------------------- | ------------------------------------------- | -------------- | ------------------------ |
@@ -88,7 +290,7 @@ member_support_agent/
 | `get_retriever()`      | Get LangChain retriever for document search | Nothing        | LangChain Retriever      |
 | `process_documents()`  | Complete pipeline: load → chunk → store     | Nothing        | ChromaDB instance        |
 
-### ✅ DocumentPipeline Implementation Status
+### DocumentPipeline Implementation Status
 
 - **PDF Loading**: ✅ Uses `PyMuPDFLoader` to load PDFs from `data/knowledge_base/`
 - **Document Chunking**: ✅ Uses `CharacterTextSplitter` with configurable chunk size/overlap
@@ -97,7 +299,9 @@ member_support_agent/
 - **Testing**: ✅ Complete test suite in `tests/test_document_pipeline.py`
 - **Dependencies**: ✅ All LangChain packages properly configured with compatible versions
 
-## 🤖 Agent Identity & Prompting
+---
+
+## Agent Identity & Prompting
 
 ### Alexa's Identity (agent_identity.md)
 
@@ -150,7 +354,7 @@ member_support_agent/
 
 ---
 
-## 🔌 How Services Connect
+## How Services Connect
 
 ```mermaid
 graph LR
@@ -176,7 +380,7 @@ graph LR
 
   subgraph Storage
     B10 --> D1[data/vector_db/]
-    B6 --> D2[data/logs/]
+    B6 --> D2[Supabase Database]
     B7 --> D2
     B8 --> D2
   end
@@ -184,7 +388,7 @@ graph LR
 
 ---
 
-## 🌐 Frontend-Backend Connection Architecture
+## Frontend-Backend Connection Architecture
 
 ### **How the Connection Works**
 
@@ -200,7 +404,7 @@ User Browser → React Frontend → Environment Check → API Request → Railwa
 
 ### **Three Deployment Configurations**
 
-#### **1. 🎯 Current Setup: Local Frontend + Railway Backend (Hybrid)**
+#### **1. Current Setup: Local Frontend + Railway Backend (Hybrid)**
 
 - **Frontend Location**: `localhost:5174` (Vite development server)
 - **Backend Location**: `https://membersupportagentlangchain-production.up.railway.app`
@@ -211,7 +415,7 @@ User Browser → React Frontend → Environment Check → API Request → Railwa
   - ✅ Real production data and AI responses
   - ✅ No need to run backend locally
 
-#### **2. 🚀 Future Production: Vercel Frontend + Railway Backend**
+#### **2. Future Production: Vercel Frontend + Railway Backend**
 
 - **Frontend Location**: `yourapp.vercel.app` (deployed)
 - **Backend Location**: `https://membersupportagentlangchain-production.up.railway.app`
@@ -222,7 +426,7 @@ User Browser → React Frontend → Environment Check → API Request → Railwa
   - ✅ Both components auto-scale
   - ✅ Professional hosting reliability
 
-#### **3. 🔧 Fully Local Development**
+#### **3. Fully Local Development**
 
 - **Frontend Location**: `localhost:5174`
 - **Backend Location**: `localhost:8000`
@@ -296,9 +500,12 @@ The system handles cross-origin requests between the frontend and backend automa
 #### **Backend CORS Configuration** (`backend/main.py`)
 
 ```python
+# Get CORS origins from environment or use default for development
+cors_origins = os.getenv("CORS_ORIGINS", "*").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins for development
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -330,7 +537,7 @@ app.add_middleware(
 2. **Send a chat message** in the frontend
 3. **Look for the request** with these characteristics:
 
-**✅ Successful Connection Indicators:**
+**Successful Connection Indicators:**
 
 - **Request URL**: `https://membersupportagentlangchain-production.up.railway.app/chat`
 - **Method**: `POST`
@@ -338,7 +545,7 @@ app.add_middleware(
 - **Response**: JSON with AI message content
 - **Time**: Usually 2-5 seconds for AI processing
 
-**❌ Connection Problems:**
+**Connection Problems:**
 
 - **Request URL**: Shows `localhost:8000` (backend not configured)
 - **Status**: `CORS error` or `Network Error`
@@ -359,44 +566,44 @@ Request Body:
 Response (200 OK):
 {
   "response": "Hello! I'm Alexa from Horizon Bay Credit Union...",
-  "session_id": "abc123"
+  "status": "success"
 }
 ```
 
 ### **Production Deployment Benefits**
 
-#### **✅ Current Production Setup (Vercel Frontend + Railway Backend)**
+#### **Current Production Setup (Vercel Frontend + Railway Backend)**
 
 **Full Production Deployment Achieved:**
 
-- 🌍 **Global Performance**: Vercel CDN delivers frontend worldwide instantly
-- 🚀 **Auto-Scaling**: Both Vercel and Railway handle traffic spikes automatically
-- 🔄 **Zero Downtime**: Professional deployment with rollback capabilities
-- 💪 **Production Ready**: Full professional hosting for both components
-- 🔒 **Security**: CORS properly configured, environment variables secured
-- 📊 **Real AI Data**: Production vector database with knowledge base
-- 🧠 **Full Functionality**: Agent memory, tools, escalation system all operational
+- **Global Performance**: Vercel CDN delivers frontend worldwide instantly
+- **Auto-Scaling**: Both Vercel and Railway handle traffic spikes automatically
+- **Zero Downtime**: Professional deployment with rollback capabilities
+- **Production Ready**: Full professional hosting for both components
+- **Security**: CORS properly configured, environment variables secured
+- **Real AI Data**: Production vector database with knowledge base
+- **Full Functionality**: Agent memory, tools, escalation system all operational
 
 **Development Workflow Benefits:**
 
-- ⚡ **Local Development**: Can still run `npm run dev` locally for changes
-- 🧪 **Testing**: Can test against production backend during development
-- 🎯 **Environment Variables**: Proper separation between local/production configs
-- 📈 **Monitoring**: Both platforms provide deployment logs and analytics
+- **Local Development**: Can still run `npm run dev` locally for changes
+- **Testing**: Can test against production backend during development
+- **Environment Variables**: Proper separation between local/production configs
+- **Monitoring**: Both platforms provide deployment logs and analytics
 
 ---
 
-## 🧠 Where State Lives
+## Where State Lives
 
 | Component         | State                                        | Persistence                                      |
 | ----------------- | -------------------------------------------- | ------------------------------------------------ |
 | **AgentExecutor** | **NEW**: Chat history, tool calls            | **NEW**: In-memory with ConversationBufferMemory |
 | `vector_db/`      | PDF embeddings                               | Persistent (ChromaDB folder)                     |
-| `supabase/`       | Conversations, messages, users               | Persistent (PostgreSQL database)                 |
+| `supabase/`       | Conversations, messages, users, escalations  | Persistent (PostgreSQL database)                 |
 | `logs/`           | Unknown questions, escalations, user details | File-based JSON                                  |
 | React `App.jsx`   | UI state, chat session                       | Browser memory                                   |
 
-## 🔧 Debug & Monitoring
+## Debug & Monitoring
 
 ### **NEW: Debug System**
 
@@ -426,7 +633,7 @@ Response (200 OK):
 - File names: `App.jsx`, `ChatWindow.jsx`, `chat.js` (no .ts/.tsx files)
 - The UI is complete, styled, and responsive, focused on core functionality (no bubble animations or extra polish tasks)
 
-## 🚀 Potential Future Enhancements
+## Potential Future Enhancements
 
 ### Tool Call Order Management
 
@@ -461,7 +668,7 @@ The Member Support Agent uses Supabase to store conversation data for escalation
 
 - **users**: `id`, `name`, `email` (for escalation contact info)
 - **conversations**: `id`, `user_id`, `started_at` (chat sessions)
-- **messages**: `id`, `conversation_id`, `content`, `sent_at` (chat messages)
+- **messages**: `id`, `conversation_id`, `content`, `topic`, `private`, `sent_at` (chat messages)
 - **escalations**: `id`, `conversation_id`, `issue_type`, `original_request`, `status`, `created_at`, `resolved_at` (escalation tracking)
 
 **Integration Status:**
@@ -469,8 +676,16 @@ The Member Support Agent uses Supabase to store conversation data for escalation
 - ✅ **Supabase Setup**: Project created and configured
 - ✅ **Database Schema**: Tables created via migrations
 - ✅ **CRUD Operations**: Complete operations in `database.py`
-- ✅ **FastAPI Integration**: Endpoints for conversation management
-- ✅ **Testing**: Comprehensive test suite in `test_crud_operations.py`
+- ✅ **FastAPI Integration**: Comprehensive endpoints for all database operations
+- ✅ **Testing**: Complete test suite in `test_crud_operations.py` (14+ tests)
+
+**API Endpoints:**
+
+- ✅ **User Management**: Create, read, update, delete users
+- ✅ **Conversation Management**: Full CRUD for conversations with user relationships
+- ✅ **Message Management**: Complete message handling with conversation context
+- ✅ **Convenience Endpoints**: Get conversations with messages, create user conversations
+- ✅ **Error Handling**: Proper HTTP status codes and error messages
 
 **Purpose:**
 

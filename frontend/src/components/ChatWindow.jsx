@@ -56,7 +56,7 @@ export default function ChatWindow() {
     setIsProcessing(true);
 
     try {
-      // Call our real API
+      // Call API
       const result = await sendMessage(userMessage);
 
       if (result.success) {
